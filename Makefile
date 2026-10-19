@@ -84,17 +84,17 @@ GINKGO_FOCUS_FLAG := $(if $(GINKGO_FOCUS),--focus="$(GINKGO_FOCUS)",)
 test-integration:
 	@test -f ./$(BINK_BINARY) || (echo "Error: bink binary not found. Run 'make build-bink' first" && exit 1)
 	@echo "=== Running Integration Tests ==="
-	$(GINKGO) -v --procs=$(TEST_PROCS) $(GINKGO_FOCUS_FLAG) --fail-fast --randomize-all --randomize-suites test/integration/
+	$(GINKGO) -v --tags="$(BUILDTAGS)" --procs=$(TEST_PROCS) $(GINKGO_FOCUS_FLAG) --fail-fast --randomize-all --randomize-suites test/integration/
 
 test-integration-composefs:
 	@test -f ./$(BINK_BINARY) || (echo "Error: bink binary not found. Run 'make build-bink' first" && exit 1)
 	@echo "=== Running Composefs Integration Tests ==="
-	$(GINKGO) -v --label-filter="composefs" --fail-fast test/integration/
+	$(GINKGO) -v --tags="$(BUILDTAGS)" --label-filter="composefs" --fail-fast test/integration/
 
 test-integration-quick:
 	@test -f ./$(BINK_BINARY) || (echo "Error: bink binary not found. Run 'make build-bink' first" && exit 1)
 	@echo "=== Running Quick Integration Tests ==="
-	$(GINKGO) -v --focus="quick" test/integration/
+	$(GINKGO) -v --tags="$(BUILDTAGS)" --focus="quick" test/integration/
 
 # Check REUSE/SPDX license compliance
 check-license:
