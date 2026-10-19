@@ -51,12 +51,32 @@ func RunCommand(cmd *exec.Cmd, timeout ...time.Duration) *gexec.Session {
 	return session
 }
 
+// MemoryArgs returns the VM memory flags used for test control-plane nodes.
+//
+// These default higher than bink's own 1900 MB default: kubeadm refuses to
+// initialise a control plane with less than 1700 MB of usable RAM, and 1900 MB
+// does not reliably leave that much once the kernel and initramfs have taken
+// their share (1686 MB observed on aarch64). Both values can be overridden
+// with BINK_TEST_MEMORY and BINK_TEST_MAX_MEMORY.
+func MemoryArgs() []string {
+	memory := os.Getenv("BINK_TEST_MEMORY")
+	if memory == "" {
+		memory = "4096"
+	}
+	maxMemory := os.Getenv("BINK_TEST_MAX_MEMORY")
+	if maxMemory == "" {
+		maxMemory = "8192"
+	}
+	return []string{"--memory", memory, "--max-memory", maxMemory}
+}
+
 // CreateCluster creates a cluster with the given name
 // This is a high-level helper that expects success
 // Uses auto-assigned ports (--api-port 0) to avoid port conflicts in tests
 func CreateCluster(name string, extraArgs ...string) {
 	GinkgoWriter.Printf("Creating cluster: %s (with auto-assigned API port)\n", name)
-	args := []string{"cluster", "start", "--cluster-name", name, "--api-port", "0", "--memory", "1900", "--max-memory", "4096", "--node-image", NodeImage()}
+	args := []string{"cluster", "start", "--cluster-name", name, "--api-port", "0", "--node-image", NodeImage()}
+	args = append(args, MemoryArgs()...)
 	args = append(args, extraArgs...)
 	cmd := BinkCmd(args...)
 	session := RunCommand(cmd, 10*time.Minute)
@@ -66,7 +86,9 @@ func CreateCluster(name string, extraArgs ...string) {
 // CreateClusterWithNodeName creates a cluster with a custom control-plane node name
 func CreateClusterWithNodeName(name, nodeName string) {
 	GinkgoWriter.Printf("Creating cluster: %s with node name: %s (with auto-assigned API port)\n", name, nodeName)
-	cmd := BinkCmd("cluster", "start", "--cluster-name", name, "--node-name", nodeName, "--api-port", "0", "--memory", "1900", "--max-memory", "4096", "--node-image", NodeImage())
+	args := []string{"cluster", "start", "--cluster-name", name, "--node-name", nodeName, "--api-port", "0", "--node-image", NodeImage()}
+	args = append(args, MemoryArgs()...)
+	cmd := BinkCmd(args...)
 	session := RunCommand(cmd, 10*time.Minute)
 	Expect(session.ExitCode()).To(Equal(0), "Failed to create cluster: %s", string(session.Err.Contents()))
 }
@@ -86,7 +108,7 @@ func AddNode(clusterName, nodeName string, extraArgs ...string) {
 		}
 	}
 	if isControlPlane {
-		args = append(args, "--memory", "1900", "--max-memory", "4096")
+		args = append(args, MemoryArgs()...)
 	} else {
 		args = append(args, "--memory", "768", "--max-memory", "2048")
 	}
