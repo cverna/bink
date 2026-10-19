@@ -1,15 +1,14 @@
 .PHONY: build-bootc-image build-disk-image build-disk-image-composefs clean help
 
 KUBE_MINOR ?= 1.36
-FEDORA_VERSION ?= 44
+FEDORA_VERSION ?= 45
 DISK_SIZE ?= 10G
 BUILD_MEMORY ?= 4G
 BUILD_LOG_DIR ?= /tmp/bcvk-logs
 BCVK_EXTRA_ARGS ?=
-# TODO: currently, there is a bug in bcvk where the digest for the image
-# doesn't match with the remote digest. A temporary fix is available at this
-# branch
-BCVK_REF ?= img-to-install-cli-opt
+# Upstream bcvk. The pinned fork branch (bcvk PR #314) predates the fw_cfg
+# credential fix and hangs waiting for SSH on aarch64.
+BCVK_REF ?= main
 
 IMAGE_TAG ?= v$(KUBE_MINOR)-fedora-$(FEDORA_VERSION)
 REGISTRY ?= ghcr.io/bootc-dev/bink

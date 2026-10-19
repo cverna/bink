@@ -1,18 +1,13 @@
-FROM quay.io/fedora/fedora-bootc:44 AS builder
+ARG FEDORA_VERSION=45
+FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION} AS builder
 
 ARG KUBE_MINOR=1.36
-# Pin kernel to 6.19.x to work around a kernel 7.0 regression.
-# https://github.com/bootc-dev/bink/issues/52
-ARG KERNEL_VERSION=6.19.14-300.fc44
-RUN dnf -y install 'dnf5-command(copr)' && \
-    dnf -y copr enable rhcontainerbot/bootc fedora-44-x86_64
+# No COPR needed: Fedora 45 ships a new enough bootc/composefs, and the
+# rhcontainerbot/bootc COPR chroot name is architecture-specific, which
+# previously hardcoded this image to x86_64.
 RUN /usr/libexec/bootc-base-imagectl build-rootfs \
     --manifest=minimal \
     --no-docs \
-    --lock kernel-${KERNEL_VERSION} \
-    --lock kernel-core-${KERNEL_VERSION} \
-    --lock kernel-modules-${KERNEL_VERSION} \
-    --lock kernel-modules-core-${KERNEL_VERSION} \
     --install NetworkManager \
     --install openssh-server \
     --install openssh-clients \
@@ -36,6 +31,11 @@ FROM scratch AS root
 COPY --from=builder /target-rootfs/ /
 
 RUN passwd -d root
+# Fedora 45's containers-common ships policy.json only under
+# /usr/share/containers, but containers/image (as used by CRI-O) only looks in
+# /etc/containers/policy.json. Without it every pod sandbox fails with
+# "no policy.json file found", so the control plane never comes up.
+RUN ln -sf /usr/share/containers/policy.json /etc/containers/policy.json
 RUN sed -i 's|"/opt/cni/bin"|"/var/lib/cni/bin"|g' /etc/crio/crio.conf && \
     sed -i 's|"/opt/cni/net.d"|"/etc/cni/net.d"|g' /etc/crio/crio.conf && \
     if [ -x /usr/libexec/crio/pinns ]; then \
