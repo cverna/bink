@@ -75,16 +75,23 @@ log "Building the cluster and DNS images"
 as_bink "cd $SRC_DIR && timeout 900 make build-cluster-image"
 as_bink "cd $SRC_DIR && timeout 600 make build-dns-image"
 
-log "Starting the cluster"
-# The default control-plane memory (1900 MB) leaves less than kubeadm's
-# 1700 MB preflight minimum, so ask for more.
-as_bink "cd $SRC_DIR && timeout 1800 ./bink cluster start --memory 4096 --max-memory 8192 --node-image $NODE_IMAGE"
+if [ "${RUN_SUITE:-1}" = "1" ]; then
+    log "Running the bink integration suite (focus: ${GINKGO_FOCUS:-all specs})"
+    # TEST_PROCS defaults to 1: each parallel process starts its own clusters,
+    # and the test host only has 8 vCPUs shared with the nested VMs.
+    as_bink "cd $SRC_DIR && BINK_NODE_IMAGE='$NODE_IMAGE' TEST_PROCS='${TEST_PROCS:-1}' GINKGO_FOCUS='${GINKGO_FOCUS:-}' timeout 5400 make test-integration"
+else
+    log "Starting the cluster"
+    # The default control-plane memory (1900 MB) leaves less than kubeadm's
+    # 1700 MB preflight minimum, so ask for more.
+    as_bink "cd $SRC_DIR && timeout 1800 ./bink cluster start --memory 4096 --max-memory 8192 --node-image $NODE_IMAGE"
 
-log "Verifying the cluster"
-NODES=$(as_bink "cd $SRC_DIR && timeout 300 ./bink node ssh node1 -- 'sudo kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide'")
-echo "$NODES"
-echo "$NODES" | grep -q ' Ready '
-echo "$NODES" | grep -q 'arm64'
+    log "Verifying the cluster"
+    NODES=$(as_bink "cd $SRC_DIR && timeout 300 ./bink node ssh node1 -- 'sudo kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide'")
+    echo "$NODES"
+    echo "$NODES" | grep -q ' Ready '
+    echo "$NODES" | grep -q 'arm64'
 
-log "Cluster is up on aarch64"
-as_bink "cd $SRC_DIR && timeout 300 ./bink cluster stop" || true
+    log "Cluster is up on aarch64"
+    as_bink "cd $SRC_DIR && timeout 300 ./bink cluster stop" || true
+fi

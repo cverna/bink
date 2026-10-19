@@ -1,10 +1,11 @@
 summary: Run a bink cluster on aarch64 bare metal
 
 execute:
-  # The full chain (build images, install, boot, kubeadm) takes roughly 25
-  # minutes. Every slow step also has its own `timeout` in the driver script,
-  # so this is only the overall backstop against a hang.
-  duration: 45m
+  # Builds the images (~25 minutes), then runs the bink integration suite
+  # (capped at 90 minutes in the driver). The first run is limited to the
+  # cluster lifecycle specs while the suite is validated on aarch64; set
+  # GINKGO_FOCUS= (empty) in the plan script to run everything.
+  duration: 2h
   script:
     - |
       set -euxo pipefail
@@ -12,4 +13,4 @@ execute:
       git clone "${PACKIT_SOURCE_URL:-https://github.com/bootc-dev/bink}" /src/bink
       cd /src/bink
       git checkout "${PACKIT_SOURCE_SHA:-main}"
-      bash hack/ci-aarch64.sh
+      GINKGO_FOCUS="${GINKGO_FOCUS-Cluster Lifecycle}" bash hack/ci-aarch64.sh
