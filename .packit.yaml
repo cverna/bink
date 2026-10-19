@@ -1,0 +1,35 @@
+---
+# Testing Farm CI for bink.
+#
+# The tests job runs without a Copr build because bink is a Go application, not
+# an RPM package.
+#
+# Bare metal is required: bink runs nested libvirt/QEMU VMs and therefore needs
+# /dev/kvm, which a virtual Testing Farm guest does not expose. On the Public
+# Ranch bare metal is requested with hardware.virtualization.is-virtualized.
+upstream_package_name: bink
+downstream_package_name: bink
+
+jobs:
+  # Run a real bink cluster end to end. The plan asserts /dev/kvm first so an
+  # environment problem is reported immediately rather than 20 minutes into
+  # the image builds.
+  #
+  # Triggered on pull requests so the test can be exercised without pushing
+  # to main. Use `trigger: commit` with `branch: main` instead if it should
+  # run on every commit landing on main.
+  - job: tests
+    trigger: pull_request
+    targets: [fedora-44-aarch64]
+    skip_build: true
+    identifier: aarch64-cluster
+    tf_extra_params:
+      environments:
+        - hardware:
+            virtualization:
+              is-virtualized: false
+            memory: ">= 16 GB"
+            cpu:
+              processors: ">= 8"
+            disk:
+              - size: ">= 100 GB"

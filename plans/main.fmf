@@ -1,0 +1,16 @@
+summary: Run a bink cluster on aarch64 bare metal
+
+execute:
+  # Builds the images (~25 minutes), then runs the bink integration suite
+  # (capped at 90 minutes in the driver). The first run is limited to the
+  # cluster lifecycle specs while the suite is validated on aarch64; set
+  # GINKGO_FOCUS= (empty) in the plan script to run everything.
+  duration: 2h
+  script:
+    - |
+      set -euxo pipefail
+      dnf -y install git
+      git clone "${PACKIT_SOURCE_URL:-https://github.com/bootc-dev/bink}" /src/bink
+      cd /src/bink
+      git checkout "${PACKIT_SOURCE_SHA:-main}"
+      GINKGO_FOCUS="${GINKGO_FOCUS-Cluster Lifecycle}" bash hack/ci-aarch64.sh

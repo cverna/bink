@@ -42,7 +42,9 @@ var _ = Describe("Cluster Lifecycle", func() {
 			targetImgRef := "registry.cluster.local:5000/node:latest"
 
 			By("Creating cluster with --expose, custom node name, memory ballooning, and target-imgref")
-			cmd := helpers.BinkCmd("cluster", "start", "--cluster-name", clusterName, "--api-port", "0", "--memory", "1900", "--max-memory", "4096", "--node-name", customNodeName, "--expose", kubeconfigPath, "--target-imgref", targetImgRef, "--node-image", helpers.NodeImage())
+			args := []string{"cluster", "start", "--cluster-name", clusterName, "--api-port", "0", "--node-name", customNodeName, "--expose", kubeconfigPath, "--target-imgref", targetImgRef, "--node-image", helpers.NodeImage()}
+			args = append(args, helpers.MemoryArgs()...)
+			cmd := helpers.BinkCmd(args...)
 			session := helpers.RunCommand(cmd)
 
 			By("Verifying cluster creation command succeeded")
