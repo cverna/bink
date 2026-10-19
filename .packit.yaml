@@ -13,9 +13,12 @@ downstream_package_name: bink
 jobs:
   # Smoke-test the environment first (architecture and /dev/kvm) so the
   # assumption is verified before investing in a full cluster run.
+  #
+  # Triggered on pull requests so the test can be exercised without pushing
+  # to main. Use `trigger: commit` with `branch: main` instead if it should
+  # run on every commit landing on main.
   - job: tests
-    trigger: commit
-    branch: main
+    trigger: pull_request
     targets: [fedora-44-aarch64]
     skip_build: true
     identifier: bare-metal-smoke
