@@ -1,0 +1,8 @@
+summary: aarch64 bare metal environment smoke test
+
+execute:
+  script:
+    - uname -m
+    - systemd-detect-virt --vm || true
+    - ls -l /dev/kvm /dev/fuse
+    - test -c /dev/kvm
