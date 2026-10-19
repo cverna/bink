@@ -11,8 +11,9 @@ upstream_package_name: bink
 downstream_package_name: bink
 
 jobs:
-  # Smoke-test the environment first (architecture and /dev/kvm) so the
-  # assumption is verified before investing in a full cluster run.
+  # Run a real bink cluster end to end. The plan asserts /dev/kvm first so an
+  # environment problem is reported immediately rather than 20 minutes into
+  # the image builds.
   #
   # Triggered on pull requests so the test can be exercised without pushing
   # to main. Use `trigger: commit` with `branch: main` instead if it should
@@ -21,7 +22,7 @@ jobs:
     trigger: pull_request
     targets: [fedora-44-aarch64]
     skip_build: true
-    identifier: bare-metal-smoke
+    identifier: aarch64-cluster
     tf_extra_params:
       environments:
         - hardware:

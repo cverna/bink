@@ -1,8 +1,15 @@
-summary: aarch64 bare metal environment smoke test
+summary: Run a bink cluster on aarch64 bare metal
 
 execute:
+  # The full chain (build images, install, boot, kubeadm) takes roughly 25
+  # minutes. Every slow step also has its own `timeout` in the driver script,
+  # so this is only the overall backstop against a hang.
+  duration: 45m
   script:
-    - uname -m
-    - systemd-detect-virt --vm || true
-    - ls -l /dev/kvm /dev/fuse
-    - test -c /dev/kvm
+    - |
+      set -euxo pipefail
+      dnf -y install git
+      git clone "${PACKIT_SOURCE_URL:-https://github.com/bootc-dev/bink}" /src/bink
+      cd /src/bink
+      git checkout "${PACKIT_SOURCE_SHA:-main}"
+      bash hack/ci-aarch64.sh
